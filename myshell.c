@@ -20,7 +20,7 @@
 #define BUFFERSIZE 256
 //Shell prompt
 #define PROMPT "myShell >> "
-//sizeof shell proimpt
+//sizeof shell prompt
 #define PROMPTSIZE sizeof(PROMPT)
 
 int main(int* argc, char** argv)
