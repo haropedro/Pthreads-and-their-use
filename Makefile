@@ -1,4 +1,4 @@
-fc: myshell.c
+myshell: myshell.c
 	gcc -I -Wall myshell.c -o myshell
 
 clean:
