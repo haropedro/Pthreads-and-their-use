@@ -16,9 +16,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-/* CANNOT BE CHANGED */
 #define BUFFERSIZE 256
-/* --------------------*/
 #define PROMPT "myShell >> "
 #define PROMPTSIZE sizeof(PROMPT)
 
