@@ -51,8 +51,10 @@ int main(int* argc, char** argv)
 		input = output = output2 = output_err = output_err2 = background = false;
 		
 		// strtok_r breaks the inputted string into tokens, stored in args[]
-		char *save_ptr;
-		char *next_ptr = strtok_r(buffer, " ", &save_ptr);
+		char *myargv;
+		char *next_ptr = strtok_r(buffer, " ", &myargv);
+        int myargc;
+        
 		
 		for (int i = 0; i <= PROMPTSIZE; i++)
 		{
@@ -65,14 +67,15 @@ int main(int* argc, char** argv)
 					// make all args null after redirect symbol
 					for (int j = i; j <= PROMPTSIZE; j++) {
 						args[j] = NULL;
+                        myargc++;
 					}
 					
 					// next token must be filename
-					next_ptr = strtok_r(NULL, " ", &save_ptr);
+					next_ptr = strtok_r(NULL, " ", &myargv);
 					infile = next_ptr;
 					
 					// get next token
-					next_ptr = strtok_r(NULL, " ", &save_ptr);
+					next_ptr = strtok_r(NULL, " ", &myargv);
 					
 					// break if token is null, since there is nothing after
 					if (next_ptr == NULL) {
@@ -96,9 +99,9 @@ int main(int* argc, char** argv)
 					for (int j = i; j <= PROMPTSIZE; j++) {
 						args[j] = NULL;
 					}
-					next_ptr = strtok_r(NULL, " ", &save_ptr);
+					next_ptr = strtok_r(NULL, " ", &myargv);
 					outfile = next_ptr;
-					next_ptr = strtok_r(NULL, " ", &save_ptr);
+					next_ptr = strtok_r(NULL, " ", &myargv);
 					if (next_ptr == NULL) {
 						break;
 					}
@@ -109,7 +112,7 @@ int main(int* argc, char** argv)
 					for (int j = i; j <= PROMPTSIZE; j++) {
 						args[j] = NULL;
 					}
-					next_ptr = strtok_r(NULL, " ", &save_ptr);
+					next_ptr = strtok_r(NULL, " ", &myargv);
 					break;
 				}
 			}
@@ -118,7 +121,7 @@ int main(int* argc, char** argv)
 			if (next_ptr==NULL||output||output2||output_err||output_err2||background) {
 				break;
 			}
-			next_ptr = strtok_r(NULL, " ", &save_ptr);
+			next_ptr = strtok_r(NULL, " ", &myargv);
 		}
 		args[PROMPTSIZE] = NULL; //PROMPTSIZE is Null
 		
@@ -156,7 +159,7 @@ int main(int* argc, char** argv)
 			dup2(out, STDERR_FILENO); // standard error is now to file
 			close(out); // out's fd no longer needed
 		}
-		
+		/*
 		pid_t pid;
 		pid = fork();
 		
@@ -196,7 +199,8 @@ int main(int* argc, char** argv)
 	} // end while
     
    
-  
+  */
+ 
 return 0;
 }
 
