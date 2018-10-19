@@ -15,26 +15,42 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
-
 #include <stdbool.h> // true, false
 #include <sys/wait.h> // waitpid
 
 #define BUFFERSIZE 256
-#define PROMPT "myShell >> "
+#define PROMPT "myShell>> "
 #define PROMPTSIZE sizeof(PROMPT) 
 
 int main(int* argc, char** argv)
 {
+ 
+char *buffer;
 
-  char buffer[BUFFERSIZE];
+ 
+buffer = (char *)malloc(BUFFERSIZE* sizeof(char*));
+
+ // char buffer[BUFFERSIZE];
   // Stores the commands entered by user (last value has to be
   // NULL, so the size is 1 larger than the max # of tokens)
   char *args[PROMPTSIZE + 1];
+/*
+
+if (getcwd(buffer, sizeof(buffer))!=NULL){
+printf("Current working dir: %s\n", buffer);
+}else{
+perror("getcwd()error");
+return-1;
+}
+*/
+
+//buffer = getcwd(buffer, sizeof(buffer));
+
 
   while (true)
   {
    printf("%s ", PROMPT);
+  // printf("%s%s ", PROMPT,buffer);
    fgets(buffer, BUFFERSIZE, stdin);
 
    char *pos;
@@ -83,7 +99,7 @@ int main(int* argc, char** argv)
 					}
 				}
 				if (strcmp(next_ptr, ">") == 0 || strcmp(next_ptr, ">>") == 0
-						|| strcmp(next_ptr, "2>") == 0 || strcmp(next_ptr, "2>>") == 0)
+						|| strcmp(next_ptr, "2>") == 0 || strcmp(next_ptr, "2>>") == 0 || strcmp(next_ptr, "|") == 0)
 				{
 					if (strcmp(next_ptr, ">") == 0) {
 						output = true;
@@ -93,6 +109,11 @@ int main(int* argc, char** argv)
 						output_err = true;
 					} else if (strcmp(next_ptr, "2>>") == 0) {
 						output_err2 = true;
+                    } else if (strcmp(next_ptr, "|") == 0) {
+						output_err2 = true;
+                    
+
+
 					}
 					
 					// repeat same process as for input
@@ -118,7 +139,7 @@ int main(int* argc, char** argv)
 			}
 			args[i] = next_ptr;
 			
-			if (next_ptr==NULL||output||output2||output_err||output_err2||background) {
+			if (next_ptr == NULL||output||output2||output_err||output_err2||background) {
 				break;
 			}
 			next_ptr = strtok_r(NULL, " ", &myargv);
@@ -159,7 +180,7 @@ int main(int* argc, char** argv)
 			dup2(out, STDERR_FILENO); // standard error is now to file
 			close(out); // out's fd no longer needed
 		}
-		/*
+
 		pid_t pid;
 		pid = fork();
 		
@@ -199,7 +220,6 @@ int main(int* argc, char** argv)
 	} // end while
     
    
-  */
  
 return 0;
 }
