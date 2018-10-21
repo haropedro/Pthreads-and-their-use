@@ -10,6 +10,8 @@ In the terminal cd into the  folder containing the program and later type gcc -I
 After you are inside the shell, runs all the commands like in the actual linux shell. 
 
 ## Run Instructions:
+The shell works in the following way, you type a command in the linux kernel and it does the function that you say it supposed to do. It activates a fork process in which a parent and child carries out the functions inside the shell. 
+
 To run the shell type gcc -I -Wall myshell.c -o myshell and later type ./myshell
 
 ## List Extra Credits completed (if non attempted leave blank)
