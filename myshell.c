@@ -1,7 +1,7 @@
 /****************************************************************
  * Name        : Harold Pedroso                                 *
  * Class       : CSC 415                                        *
- * Date        : 10/06/18                                       *
+ * Date        : 10/20/18                                       *
  * Description :  Writting a simple bash shell program          *
  *                that will execute simple commands. The main   *
  *                goal of the assignment is working with        *
@@ -15,214 +15,343 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <stdbool.h> // true, false
+#include <inttypes.h>
 #include <sys/wait.h> // waitpid
+#include <string.h>
+
 
 #define BUFFERSIZE 256
 #define PROMPT "myShell>> "
 #define PROMPTSIZE sizeof(PROMPT) 
 
-int main(int* argc, char** argv)
-{
- 
-char *buffer;
 
- 
-buffer = (char *)malloc(BUFFERSIZE* sizeof(char*));
+char *token, **myargv, str[BUFFERSIZE];
+int myargc;
 
- // char buffer[BUFFERSIZE];
-  // Stores the commands entered by user (last value has to be
-  // NULL, so the size is 1 larger than the max # of tokens)
-  char *args[PROMPTSIZE + 1];
-/*
 
-if (getcwd(buffer, sizeof(buffer))!=NULL){
-printf("Current working dir: %s\n", buffer);
-}else{
-perror("getcwd()error");
-return-1;
+void displayPrompt();
+int getInput();
+int executeMain();
+int redirect_to_file(int redirectId, int mode);
+int fnPipe(int redirectId);
+int RunBackground();
+
+
+int main(int* argc, char** argv){
+char *cmd, cwd[256];
+int rtnCd, redirectId;
+
+
+while(1){
+//while(true){
+
+displayPrompt();
+rtnCd = getInput();
+if (rtnCd == -1){
+continue;
 }
-*/
 
-//buffer = getcwd(buffer, sizeof(buffer));
-
-
-  while (true)
-  {
-   printf("%s ", PROMPT);
-  // printf("%s%s ", PROMPT,buffer);
-   fgets(buffer, BUFFERSIZE, stdin);
-
-   char *pos;
-   if((pos = strchr(buffer, '\n')) != NULL){
-   *pos = '\0';
-    }
-
-   if(strcmp(buffer, "exit") == 0) {
-	  break; // exit shell if user inputs "exit"
-   }
-        int in, out, saved_in, saved_out; // fds
-		char *infile, *outfile;
-		bool input, output, output2, output_err, output_err2, background;
-		input = output = output2 = output_err = output_err2 = background = false;
-		
-		// strtok_r breaks the inputted string into tokens, stored in args[]
-		char *myargv;
-		char *next_ptr = strtok_r(buffer, " ", &myargv);
-        int myargc;
-        
-		
-		for (int i = 0; i <= PROMPTSIZE; i++)
-		{
-			if (next_ptr != NULL)
-			{
-				if (strcmp(next_ptr, "<") == 0)
-				{
-					input = true;
-					
-					// make all args null after redirect symbol
-					for (int j = i; j <= PROMPTSIZE; j++) {
-						args[j] = NULL;
-                        myargc++;
-					}
-					
-					// next token must be filename
-					next_ptr = strtok_r(NULL, " ", &myargv);
-					infile = next_ptr;
-					
-					// get next token
-					next_ptr = strtok_r(NULL, " ", &myargv);
-					
-					// break if token is null, since there is nothing after
-					if (next_ptr == NULL) {
-						break;
-					}
-				}
-				if (strcmp(next_ptr, ">") == 0 || strcmp(next_ptr, ">>") == 0
-						|| strcmp(next_ptr, "2>") == 0 || strcmp(next_ptr, "2>>") == 0 || strcmp(next_ptr, "|") == 0)
-				{
-					if (strcmp(next_ptr, ">") == 0) {
-						output = true;
-					} else if (strcmp(next_ptr, ">>") == 0) {
-						output2 = true;
-					} else if (strcmp(next_ptr, "2>") == 0) {
-						output_err = true;
-					} else if (strcmp(next_ptr, "2>>") == 0) {
-						output_err2 = true;
-                    } else if (strcmp(next_ptr, "|") == 0) {
-						output_err2 = true;
-                    
-
-
-					}
-					
-					// repeat same process as for input
-					for (int j = i; j <= PROMPTSIZE; j++) {
-						args[j] = NULL;
-					}
-					next_ptr = strtok_r(NULL, " ", &myargv);
-					outfile = next_ptr;
-					next_ptr = strtok_r(NULL, " ", &myargv);
-					if (next_ptr == NULL) {
-						break;
-					}
-				}
-				if (strcmp(next_ptr, "&") == 0) // '&' is guaranteed to be last token
-				{
-					background = true;
-					for (int j = i; j <= PROMPTSIZE; j++) {
-						args[j] = NULL;
-					}
-					next_ptr = strtok_r(NULL, " ", &myargv);
-					break;
-				}
-			}
-			args[i] = next_ptr;
-			
-			if (next_ptr == NULL||output||output2||output_err||output_err2||background) {
-				break;
-			}
-			next_ptr = strtok_r(NULL, " ", &myargv);
-		}
-		args[PROMPTSIZE] = NULL; //PROMPTSIZE is Null
-		
-		if (input)
-		{
-			in = open(infile, O_RDONLY);
-			saved_in = dup(STDIN_FILENO); // save fd of STDIN
-			dup2(in, STDIN_FILENO); // standard input is now to file
-			close(in); // in's fd no longer needed
-		}
-		if (output || output2)
-		{
-			// O_WRONLY: write; O_TRUNC: truncate; O_APPEND: append; O_CREAT: create file
-			// I_IRUSR, S_IWUSR: read & write for owner
-			// I_IRGRP, S_IWGRP: read & write for group
-			if (output) {
-				out = open(outfile,O_WRONLY|O_TRUNC|O_CREAT,S_IRUSR|S_IRGRP|S_IWGRP|S_IWUSR);
-			} else {
-				out = open(outfile,O_WRONLY|O_APPEND|O_CREAT,S_IRUSR|S_IRGRP|S_IWGRP|S_IWUSR);
-			}
-
-			saved_out = dup(STDOUT_FILENO); // save fd of STDOUT
-			dup2(out, STDOUT_FILENO); // standard output is now to file
-			close(out); // out's fd no longer needed
-		}
-		else if (output_err || output_err2)
-		{
-			if (output_err) {
-				out = open(outfile,O_WRONLY|O_TRUNC|O_CREAT,S_IRUSR|S_IRGRP|S_IWGRP|S_IWUSR);
-			} else {
-				out = open(outfile,O_WRONLY|O_APPEND|O_CREAT,S_IRUSR|S_IRGRP|S_IWGRP|S_IWUSR);
-			}
-			
-			saved_out = dup(STDERR_FILENO); // save fd of STDERR
-			dup2(out, STDERR_FILENO); // standard error is now to file
-			close(out); // out's fd no longer needed
-		}
-
-		pid_t pid;
-		pid = fork();
-		
-		if (pid == 0) // child
-		{
-			int exec_result = execvp(args[0], &args[0]); // execute commands
-			if (exec_result < 0) {
-				printf("An error occurred while executing %s\n", args[0]);
-				exit(1);
-			}
-			exit(0); // child exits
-		}
-		else // parent
-		{
-			if (input) {
-				dup2(saved_in, STDIN_FILENO); // restore old STDIN
-				close(saved_in); // saved_in stored STDIN; no longer needed
-			}
-			if (output || output2) {
-				dup2(saved_out, STDOUT_FILENO); // restore old STDOUT
-				close(saved_out);
-			} else if (output_err || output_err2) {
-				dup2(saved_out, STDERR_FILENO); // restore old STDERR
-				close(saved_out);
-			}
-			
-			int exit_status;
-			if (!background) { // if background process, omit call to wait
-				pid_t wait_result = waitpid(pid, &exit_status, 0);
-				if (wait_result < 0) {
-					printf("An error occurred while waiting for process %d\n", pid);
-					exit(1);
-				}
-			}
-		}
-		
-	} // end while
-    
-   
- 
+cmd = myargv[0];
+if (strcmp(cmd, "exit")==0){
+// printf("** exiting **\n");
 return 0;
 }
+
+//This will add cd to the shell. 
+if (strcmp(cmd, "cd")==0){
+chdir(myargv[1]);
+continue;
+}
+//This will the path to shell
+if (strcmp(cmd, "pwd")==0){
+printf("%s",getcwd(cwd, BUFFERSIZE));
+continue;
+}
+
+redirectId=0;
+for (int i=0;i<myargc;i++){
+if (strcmp(myargv[i],">") == 0){
+redirectId=i;
+redirect_to_file(redirectId,0);
+}
+if (strcmp(myargv[i],">>") == 0){
+redirectId=i;
+redirect_to_file(redirectId,1);
+}
+if (strcmp(myargv[i],"<") == 0){
+redirectId=i;
+redirect_to_file(redirectId,2);
+}
+if (strcmp(myargv[i],"|") == 0){
+redirectId=i;
+fnPipe(redirectId);
+
+
+
+}
+if (strcmp(myargv[i],"&") == 0){
+redirectId=myargc;
+RunBackground();
+}
+
+}
+if (redirectId != 0){
+continue;
+}
+
+rtnCd = executeMain();
+if (rtnCd == -1) {
+continue;
+}
+}
+}
+//************************************************************
+//************************************************************
+void displayPrompt(){
+char cwd[256], newPrompt[256], s[256];
+
+getcwd(cwd, BUFFERSIZE);
+/*
+These functions return a null-terminated string containing the absolute path-name that is the current working directory of the callling process. 
+*/
+
+
+printf("\n %s %s %s", "MyShell", cwd,">>" );
+if (PROMPTSIZE > 256){
+printf("PROMPT exceeds limits specified");
+}
+}
+
+//***************************************************************
+//***************************************************************
+
+
+//The getInput functions will get all the inputs needed to run the program and it will displays the number of argumemnts and the arg count. 
+int getInput(){
+
+char *tokens;
+int length;
+myargv = (char **)malloc(6* sizeof(char*));
+
+fflush(stdin);
+fgets(str, BUFFERSIZE, stdin);
+
+length = strlen(str);
+if (length == 1){
+printf("Error: input is empty.\n");
+return -1;
+}
+if(length > 256){
+printf("Error: input length exceeds limit of 256.\n");
+return -1;
+}
+
+//tokenizing
+myargc=0;
+tokens = strtok(str, " \t\n");
+myargv[myargc++] = (char *)tokens;
+
+while(1){
+//while(true)
+tokens = strtok(NULL, " \t\n");
+if (!tokens){
+break;
+}
+myargv[myargc++] = (char *)tokens;
+}
+
+printf("****** %s\n",str);
+for (int i=0;i<myargc;i++){
+printf("****** argument no %d = %s\n",i,myargv[i]);
+}
+printf("*****  argc= %d\n\n",myargc);
+
+
+
+if (myargc > 8){
+printf("Too many arguments on the input stream .");
+return -1;
+}
+
+}
+//***********************************************************
+
+int executeMain(){
+
+int pid, rtnCd;
+
+pid = fork();
+if (pid == 0){
+rtnCd = execvp(myargv[0], myargv);
+if (rtnCd < 0){
+printf("Error: An error occurred executing %s\n", myargv[0]);
+return -1;
+}
+}else{
+waitpid(pid, NULL, 0);
+}
+}
+//****************************************************
+int redirect_to_file(int redirectId, const int mode){
+//
+int fd,cpid,dupRtCd;
+//dup_rtn_cd
+char **myargv1 = (char **)malloc(6* sizeof(char*));
+
+if (mode == 0){
+fd = open(myargv[redirectId+1], O_CREAT | O_WRONLY | O_TRUNC, 00777 );
+} else if (mode == 1){
+fd = open(myargv[redirectId+1], O_CREAT | O_WRONLY | O_APPEND, 00777 );
+} else if (mode == 2){
+fd = open(myargv[redirectId+1], O_RDONLY);
+}
+
+if (fd < 0){
+printf("Error: could not open file, %s",myargv[redirectId+1]);
+}
+
+if (mode <= 1){
+dupRtCd = dup(1);
+dup2(fd,1);
+}else{
+dupRtCd = dup(0);
+dup2(fd,0);
+}
+close(fd);
+
+for (int i=0;i<redirectId;i++){
+myargv1[i] = myargv[i];
+}
+
+cpid = fork();
+if (cpid == 0){
+if (execvp(myargv1[0], myargv1) < 0){
+perror("Error in executing redirection of files.");
+}
+}else{
+waitpid(cpid, NULL, 0);
+}
+fflush(stdout);
+close(fd);
+if (mode <= 1){
+dup2(dupRtCd,1);
+}else{
+dup2(dupRtCd,0);
+}
+close(dupRtCd);
+}
+
+
+//********************************************************
+int fnPipe(int redirectId){
+
+int pipefd[2];
+pid_t pid1,pid2;
+char **myargv1 = (char **)malloc(6* sizeof(char*));
+char **myargv2 = (char **)malloc(6* sizeof(char*));
+
+for (int i=0;i<redirectId;i++){
+myargv1[i] = myargv[i];
+}
+for (int i=0,j=redirectId+1;j<myargc;i++,j++){
+myargv2[i] = myargv[j];
+}
+
+if (pipe(pipefd) < 0) {
+perror("Pipe couldnt be executed");
+return -1;
+}
+pid1 = fork();
+if (pid1 < 0) {
+perror("Fork couldnt be executed ");
+return -1;
+}
+printf("forked");
+if (pid1 == 0) {
+dup2(pipefd[0],0);
+close(pipefd[0]);
+close(pipefd[1]) ;
+printf("piping in child /n"); 
+//Close unused write end
+
+if(execvp(myargv2[0], myargv2)< 0){
+printf("Pipe could not be executed error.");
+return -1;
+}
+}else if (pid1 > 0){
+dup2(pipefd[1], 1);
+close(pipefd[0]);
+close(pipefd[1]) ;
+if (execvp(myargv1[0], myargv1) < 0){
+printf("Pipe could not be executed error.");
+return -1; // ?? check
+}
+wait(NULL);
+}
+return 0;
+
+}
+
+
+//******************************************************************
+int RunBackground(){
+int count=1;
+pid_t pid;
+
+myargv[myargc-1] = NULL;
+
+pid = fork();
+if (pid == 0){
+if (execvp(myargv[0], myargv) < 0){
+perror("error");
+return -1;
+}
+}else{
+printf("[ %d ]", getpid());
+//This will returns the process ID of the calling process
+
+if (!count){
+waitpid(pid, NULL, 1);
+return -1;
+}
+count = 0;
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
