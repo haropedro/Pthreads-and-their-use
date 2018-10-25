@@ -17,7 +17,7 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <sys/wait.h> // waitpid
-#include <string.h>
+
 
 
 #define BUFFERSIZE 256
@@ -32,13 +32,14 @@ int myargc;
 void displayPrompt();
 int getInput();
 int executeMain();
-int redirect_to_file(int redirectId, int mode);
+int redirectFile(int redirectId, int mode);
 int fnPipe(int redirectId);
 int RunBackground();
 
 
 int main(int* argc, char** argv){
-char *cmd, cwd[256];
+char *shell, cwd[256];
+
 int rtnCd, redirectId;
 
 
@@ -50,20 +51,19 @@ rtnCd = getInput();
 if (rtnCd == -1){
 continue;
 }
-
-cmd = myargv[0];
-if (strcmp(cmd, "exit")==0){
+shell = myargv[0];
+if (strcmp(shell, "exit")== 0){
 // printf("** exiting **\n");
 return 0;
 }
 
 //This will add cd to the shell. 
-if (strcmp(cmd, "cd")==0){
+if (strcmp(shell, "cd")== 0){
 chdir(myargv[1]);
 continue;
 }
 //This will the path to shell
-if (strcmp(cmd, "pwd")==0){
+if (strcmp(shell, "pwd")== 0){
 printf("%s",getcwd(cwd, BUFFERSIZE));
 continue;
 }
@@ -72,15 +72,15 @@ redirectId=0;
 for (int i=0;i<myargc;i++){
 if (strcmp(myargv[i],">") == 0){
 redirectId=i;
-redirect_to_file(redirectId,0);
+redirectFile(redirectId,0);
 }
 if (strcmp(myargv[i],">>") == 0){
 redirectId=i;
-redirect_to_file(redirectId,1);
+redirectFile(redirectId,1);
 }
 if (strcmp(myargv[i],"<") == 0){
 redirectId=i;
-redirect_to_file(redirectId,2);
+redirectFile(redirectId,2);
 }
 if (strcmp(myargv[i],"|") == 0){
 redirectId=i;
@@ -192,7 +192,7 @@ waitpid(pid, NULL, 0);
 }
 }
 //****************************************************
-int redirect_to_file(int redirectId, const int mode){
+int redirectFile(int redirectId, const int mode){
 //
 int fd,cpid,dupRtCd;
 //dup_rtn_cd
