@@ -1,0 +1,167 @@
+pseudo goes here
+
+Producer:
+while (true) {
+/* produce an item in next produced */
+while (counter == BUFFER_SIZE) ;
+/* do nothing */
+buffer[in] = next_produced;
+in = (in + 1) % BUFFER_SIZE;
+counter++;
+}
+
+Consumer:
+while (true) {
+while (counter == 0)
+; /* do nothing */
+next_consumed = buffer[out];
+out = (out + 1) % BUFFER_SIZE;
+counter--;
+/* consume the item in next consumed */
+} 
+
+Critical Section
+Algorithm for Process Pi
+
+do {
+while (turn == j);
+critical section
+turn = j;
+remainder section
+} while (true); 
+
+do {
+acquire lock
+critical section
+release lock
+remainder section
+} while (TRUE);
+
+
+boolean test_and_set (boolean *target)
+{
+boolean rv = *target;
+*target = TRUE;
+return rv:
+}
+
+
+do {
+while (test_and_set(&lock))
+; /* do nothing */
+/* critical section */
+lock = false;
+/* remainder section */
+} while (true);
+
+int buffer[BUFFER_SIZE];
+semaphore mutex = 1;
+semaphore fillCount = 0;
+semaphore emptyCount = BUFFER_SIZE;
+
+main {
+    buffer = malloc(BUFFER_SIZE);
+
+    sem_init(fillCount);
+    sem_init(emptyCo, slots);
+    pthread_mutex_init(mutex);
+    tid = malloc(Producer + Consumer);
+
+    spawn_Threads() {
+        producer(tid);
+        consumer(tid);
+    };
+
+    sem_destroy(fillCount);
+    sem_destroy(emptyCount);
+    pthread_mutex_destroy(mutex);
+    free(buffer);
+    free(tid);
+}
+
+producer {
+    while (true) {
+        item = produceItem();
+
+        wait(emptyCount);
+        lock(mutex);
+
+        putItemIntoBuffer(item);
+
+        unlock(mutex);
+        signal(fillCount);
+    }
+}
+
+consumer {
+    while (true) {
+        wait(fillCount);
+        lock(mutex);
+
+        item = removeItemFromBuffer();
+
+        unlock(mutex);
+        wait(emptyCount);
+
+        consumeItem(item);
+    }
+}
+
+
+
+Testing Strategy:
+
+My testing strategy is that I have two arrays that they will match if the producer produce a certain numbers of threads that the consumer will consume. 
+
+
+104 was consumed by consumer-> 5
+92 was consumed by consumer-> 5
+110 was produced by producer-> 5
+111 was produced by producer-> 5
+111 was consumed by consumer-> 5
+110 was consumed by consumer-> 5
+Timestamp: Wed Nov 28 21:38:20 2018
+
+Producer Array: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 
+Consumer Array: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 
+Consumer and Producer Arrays Match!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
